@@ -1,0 +1,16 @@
+appId: com.peermeeting.app
+productName: PeerMeeting
+directories:
+  output: release
+win:
+  target:
+    - nsis
+  sign: null
+mac:
+  target:
+    - dmg
+  identity: null
+asar: false
+files:
+  - out/**/*
+  - package.json

@@ -1,0 +1,37 @@
+{
+  "name": "meeting",
+  "version": "1.0.0",
+  "description": "Peer Voice Meeting",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "pack:win": "electron-vite build && electron-builder --win",
+    "pack:mac": "electron-vite build && electron-builder --mac",
+    "pack:win:dir": "electron-vite build && electron-builder --win --dir",
+    "pack:mac:dir": "electron-vite build && electron-builder --mac --dir",
+    "test:a": "npm run build && npx electron . --user-data-dir=./.test-data/a",
+    "test:b": "npm run build && npx electron . --user-data-dir=./.test-data/b",
+    "test:local": "npm run build && start /b npx electron . --user-data-dir=./.test-data/a && start /b npx electron . --user-data-dir=./.test-data/b"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^3.0.0",
+    "trystero": "^0.20.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}
