@@ -14,6 +14,19 @@ class VoiceService {
   private onMuteChangeCb: OnMuteChange | null = null
   private isMuted = false
 
+  private micTestContext: AudioContext | null = null
+  private micTestSource: MediaStreamAudioSourceNode | null = null
+  private micTestGain: GainNode | null = null
+  private wasMutedBeforeTest = false
+  private micTesting = false
+
+  private speakerTestContext: AudioContext | null = null
+  private speakerTestOsc: OscillatorNode | null = null
+  private speakerTestGain: GainNode | null = null
+  private speakerTestTimer: ReturnType<typeof setTimeout> | null = null
+  private speakerTesting = false
+  private speakerVolume = 0.5
+
   setCallbacks(callbacks: {
     onLocalStream?: OnLocalStream
     onRemoteStream?: OnRemoteStream
@@ -117,6 +130,9 @@ class VoiceService {
   }
 
   cleanup(): void {
+    this.stopMicTest()
+    this.stopSpeakerTest()
+
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop())
       this.localStream = null
@@ -136,6 +152,108 @@ class VoiceService {
     }
 
     this.isMuted = false
+  }
+
+  async startMicTest(): Promise<void> {
+    if (this.micTesting) return
+    const stream = this.getLocalStream()
+    if (!stream) throw new Error('请先启动音频设备')
+
+    this.wasMutedBeforeTest = this.isMuted
+    if (this.isMuted) {
+      this.isMuted = false
+      stream.getAudioTracks().forEach(track => { track.enabled = true })
+    }
+
+    this.micTestContext = new AudioContext()
+    this.micTestSource = this.micTestContext.createMediaStreamSource(stream)
+    this.micTestGain = this.micTestContext.createGain()
+    this.micTestGain.gain.value = 0.8
+    this.micTestSource.connect(this.micTestGain)
+    this.micTestGain.connect(this.micTestContext.destination)
+    this.micTesting = true
+  }
+
+  stopMicTest(): void {
+    if (!this.micTesting) return
+    this.micTesting = false
+
+    if (this.micTestGain) {
+      this.micTestGain.disconnect()
+      this.micTestGain = null
+    }
+    if (this.micTestSource) {
+      this.micTestSource.disconnect()
+      this.micTestSource = null
+    }
+    if (this.micTestContext) {
+      this.micTestContext.close()
+      this.micTestContext = null
+    }
+
+    if (this.wasMutedBeforeTest && this.localStream) {
+      this.isMuted = true
+      this.localStream.getAudioTracks().forEach(track => { track.enabled = false })
+    }
+    this.wasMutedBeforeTest = false
+  }
+
+  startSpeakerTest(): void {
+    if (this.speakerTesting) return
+    this.speakerTestContext = new AudioContext()
+    this.speakerTestOsc = this.speakerTestContext.createOscillator()
+    this.speakerTestGain = this.speakerTestContext.createGain()
+    this.speakerTestGain.gain.value = this.speakerVolume
+    this.speakerTestOsc.type = 'sine'
+    this.speakerTestOsc.frequency.value = 440
+    this.speakerTestOsc.connect(this.speakerTestGain)
+    this.speakerTestGain.connect(this.speakerTestContext.destination)
+    this.speakerTestOsc.start()
+    this.speakerTesting = true
+
+    this.speakerTestTimer = setTimeout(() => {
+      this.stopSpeakerTest()
+    }, 3000)
+  }
+
+  stopSpeakerTest(): void {
+    if (this.speakerTestTimer) {
+      clearTimeout(this.speakerTestTimer)
+      this.speakerTestTimer = null
+    }
+    if (this.speakerTestOsc) {
+      this.speakerTestOsc.stop()
+      this.speakerTestOsc.disconnect()
+      this.speakerTestOsc = null
+    }
+    if (this.speakerTestGain) {
+      this.speakerTestGain.disconnect()
+      this.speakerTestGain = null
+    }
+    if (this.speakerTestContext) {
+      this.speakerTestContext.close()
+      this.speakerTestContext = null
+    }
+    this.speakerTesting = false
+  }
+
+  setSpeakerVolume(volume: number): void {
+    this.speakerVolume = Math.max(0, Math.min(1, volume))
+    if (this.speakerTestGain) {
+      this.speakerTestGain.gain.value = this.speakerVolume
+    }
+  }
+
+  getSpeakerVolume(): number {
+    return this.speakerVolume
+  }
+
+  getIsMicTesting(): boolean {
+    return this.micTesting
+  }
+
+  getIsSpeakerTesting(): boolean {
+    return this.speakerTesting
   }
 }
 

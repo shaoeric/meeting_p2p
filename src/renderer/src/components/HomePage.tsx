@@ -130,6 +130,12 @@ export default function HomePage() {
             >
               加入房间
             </button>
+            <button
+              className="btn btn-ghost"
+              onClick={() => store.setShowAudioSettings(true)}
+            >
+              音频设置
+            </button>
           </div>
         )}
 
@@ -249,6 +255,8 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {store.showAudioSettings && <AudioSettings />}
     </div>
   )
 }

@@ -33,6 +33,7 @@ describe('VoiceService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     voiceService.cleanup()
+    if (voiceService.getIsSpeakerTesting()) voiceService.stopSpeakerTest()
 
     mockSource = { connect: vi.fn() }
     mockDestination = { stream: {} }
@@ -333,6 +334,192 @@ describe('VoiceService', () => {
       voiceService.cleanup()
 
       expect(voiceService.getLocalStream()).toBeNull()
+    })
+  })
+
+  describe('micTest', () => {
+    it('getIsMicTesting returns false initially', () => {
+      expect(voiceService.getIsMicTesting()).toBe(false)
+    })
+
+    it('stopMicTest is safe to call when not testing', () => {
+      expect(() => voiceService.stopMicTest()).not.toThrow()
+    })
+
+    it('startMicTest throws when no local stream', async () => {
+      await expect(voiceService.startMicTest()).rejects.toThrow('请先启动音频设备')
+    })
+
+    it('startMicTest creates local audio loopback', async () => {
+      const mockConn = { room: { addStream: vi.fn() } }
+      vi.mocked(roomService.getConnection).mockReturnValue(mockConn as any)
+      const stream = await voiceService.startLocalAudio()
+
+      const src = { connect: vi.fn(), disconnect: vi.fn() }
+      const gain = { connect: vi.fn(), disconnect: vi.fn(), gain: { value: 0 } }
+      const ctx = {
+        createMediaStreamSource: vi.fn(() => src),
+        createGain: vi.fn(() => gain),
+        destination: {},
+        close: vi.fn()
+      }
+      vi.stubGlobal('AudioContext', class { constructor() { return ctx } })
+
+      await voiceService.startMicTest()
+
+      expect(voiceService.getIsMicTesting()).toBe(true)
+      expect(ctx.createMediaStreamSource).toHaveBeenCalledWith(stream)
+      expect(ctx.createGain).toHaveBeenCalled()
+      expect(gain.gain.value).toBe(0.8)
+      expect(src.connect).toHaveBeenCalledWith(gain)
+      expect(gain.connect).toHaveBeenCalledWith(ctx.destination)
+    })
+
+    it('stopMicTest disconnects and restores', async () => {
+      const mockConn = { room: { addStream: vi.fn() } }
+      vi.mocked(roomService.getConnection).mockReturnValue(mockConn as any)
+      await voiceService.startLocalAudio()
+
+      const src = { connect: vi.fn(), disconnect: vi.fn() }
+      const gain = { connect: vi.fn(), disconnect: vi.fn(), gain: { value: 0 } }
+      const ctx = {
+        createMediaStreamSource: vi.fn(() => src),
+        createGain: vi.fn(() => gain),
+        destination: {},
+        close: vi.fn()
+      }
+      vi.stubGlobal('AudioContext', class { constructor() { return ctx } })
+
+      await voiceService.startMicTest()
+      expect(voiceService.getIsMicTesting()).toBe(true)
+
+      voiceService.stopMicTest()
+
+      expect(voiceService.getIsMicTesting()).toBe(false)
+      expect(gain.disconnect).toHaveBeenCalled()
+      expect(src.disconnect).toHaveBeenCalled()
+      expect(ctx.close).toHaveBeenCalled()
+    })
+
+    it('startMicTest is no-op when already mic testing', async () => {
+      const mockConn = { room: { addStream: vi.fn() } }
+      vi.mocked(roomService.getConnection).mockReturnValue(mockConn as any)
+      await voiceService.startLocalAudio()
+
+      const ctx = {
+        createMediaStreamSource: vi.fn(() => ({ connect: vi.fn(), disconnect: vi.fn() })),
+        createGain: vi.fn(() => ({ connect: vi.fn(), disconnect: vi.fn(), gain: { value: 0 } })),
+        destination: {},
+        close: vi.fn()
+      }
+      vi.stubGlobal('AudioContext', class { constructor() { return ctx } })
+
+      await voiceService.startMicTest()
+      await voiceService.startMicTest()
+
+      expect(ctx.createMediaStreamSource).toHaveBeenCalledTimes(1)
+      voiceService.stopMicTest()
+    })
+  })
+
+  describe('speakerTest', () => {
+    it('getIsSpeakerTesting returns false initially', () => {
+      expect(voiceService.getIsSpeakerTesting()).toBe(false)
+    })
+
+    it('startSpeakerTest sets testing state and creates oscillator', () => {
+      vi.useFakeTimers()
+      const osc = { connect: vi.fn(), start: vi.fn(), stop: vi.fn(), disconnect: vi.fn(), type: '', frequency: { value: 0 } }
+      const gain = { connect: vi.fn(), disconnect: vi.fn(), gain: { value: 0 } }
+      const ctx = {
+        createOscillator: vi.fn(() => osc),
+        createGain: vi.fn(() => gain),
+        destination: {},
+        close: vi.fn()
+      }
+      vi.stubGlobal('AudioContext', class { constructor() { return ctx } })
+
+      voiceService.startSpeakerTest()
+
+      expect(voiceService.getIsSpeakerTesting()).toBe(true)
+      expect(osc.type).toBe('sine')
+      expect(osc.frequency.value).toBe(440)
+      expect(osc.start).toHaveBeenCalled()
+
+      vi.advanceTimersByTime(3500)
+      expect(voiceService.getIsSpeakerTesting()).toBe(false)
+      expect(osc.stop).toHaveBeenCalled()
+      vi.useRealTimers()
+    })
+
+    it('stopSpeakerTest cleans up', () => {
+      const osc = { connect: vi.fn(), start: vi.fn(), stop: vi.fn(), disconnect: vi.fn(), type: '', frequency: { value: 0 } }
+      const gain = { connect: vi.fn(), disconnect: vi.fn(), gain: { value: 0 } }
+      const ctx = {
+        createOscillator: vi.fn(() => osc),
+        createGain: vi.fn(() => gain),
+        destination: {},
+        close: vi.fn()
+      }
+      vi.stubGlobal('AudioContext', class { constructor() { return ctx } })
+
+      voiceService.startSpeakerTest()
+      voiceService.stopSpeakerTest()
+
+      expect(voiceService.getIsSpeakerTesting()).toBe(false)
+      expect(osc.stop).toHaveBeenCalled()
+      expect(ctx.close).toHaveBeenCalled()
+    })
+
+    it('startSpeakerTest is no-op when already testing', () => {
+      const osc = { connect: vi.fn(), start: vi.fn(), stop: vi.fn(), disconnect: vi.fn(), type: '', frequency: { value: 0 } }
+      const gain = { connect: vi.fn(), disconnect: vi.fn(), gain: { value: 0 } }
+      const ctx = {
+        createOscillator: vi.fn(() => osc),
+        createGain: vi.fn(() => gain),
+        destination: {},
+        close: vi.fn()
+      }
+      vi.stubGlobal('AudioContext', class { constructor() { return ctx } })
+
+      voiceService.startSpeakerTest()
+      voiceService.startSpeakerTest()
+
+      expect(ctx.createOscillator).toHaveBeenCalledTimes(1)
+      voiceService.stopSpeakerTest()
+    })
+  })
+
+  describe('speakerVolume', () => {
+    it('setSpeakerVolume clamps between 0 and 1', () => {
+      voiceService.setSpeakerVolume(0.3)
+      expect(voiceService.getSpeakerVolume()).toBe(0.3)
+      voiceService.setSpeakerVolume(-5)
+      expect(voiceService.getSpeakerVolume()).toBe(0)
+      voiceService.setSpeakerVolume(999)
+      expect(voiceService.getSpeakerVolume()).toBe(1)
+    })
+
+    it('setSpeakerVolume updates active speaker test gain node', () => {
+      const osc = { connect: vi.fn(), start: vi.fn(), stop: vi.fn(), disconnect: vi.fn(), type: '', frequency: { value: 0 } }
+      const gain = { connect: vi.fn(), disconnect: vi.fn(), gain: { value: 0 } }
+      const ctx = {
+        createOscillator: vi.fn(() => osc),
+        createGain: vi.fn(() => gain),
+        destination: {},
+        close: vi.fn()
+      }
+      vi.stubGlobal('AudioContext', class { constructor() { return ctx } })
+
+      voiceService.setSpeakerVolume(0.3)
+      voiceService.startSpeakerTest()
+
+      expect(gain.gain.value).toBe(0.3)
+
+      voiceService.setSpeakerVolume(0.8)
+      expect(gain.gain.value).toBe(0.8)
+
+      voiceService.stopSpeakerTest()
     })
   })
 })

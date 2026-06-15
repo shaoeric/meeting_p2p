@@ -79,6 +79,14 @@
 | voiceService.handleRemoteStream | `(stream, peerId) => void` | 处理远端音频流 |
 | voiceService.removeRemoteStream | `(peerId) => void` | 移除远端音频 |
 | voiceService.cleanup | `() => void` | 清理所有资源 |
+| voiceService.startMicTest | `() => Promise<void>` | 开始麦克风测试，本地回放 |
+| voiceService.stopMicTest | `() => void` | 停止麦克风测试 |
+| voiceService.startSpeakerTest | `() => void` | 开始扬声器测试（3秒440Hz） |
+| voiceService.stopSpeakerTest | `() => void` | 停止扬声器测试 |
+| voiceService.setSpeakerVolume | `(volume: number) => void` | 设置扬声器音量 (0~1) |
+| voiceService.getSpeakerVolume | `() => number` | 获取当前音量 |
+| voiceService.getIsMicTesting | `() => boolean` | 是否正在测试麦克风 |
+| voiceService.getIsSpeakerTesting | `() => boolean` | 是否正在测试扬声器 |
 
 ---
 

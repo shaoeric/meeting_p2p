@@ -189,4 +189,48 @@ describe('Store (React context)', () => {
     expect(store.page).toBe('home')
     expect(store.error).toBeNull()
   })
+
+  it('speakerVolume defaults to 0.5', () => {
+    let store: any
+    render(
+      <StoreProvider>
+        <TestConsumer onMount={(s) => { store = s }} />
+      </StoreProvider>
+    )
+    expect(store.speakerVolume).toBe(0.5)
+  })
+
+  it('setSpeakerVolume changes volume', () => {
+    let store: any
+    render(
+      <StoreProvider>
+        <TestConsumer onMount={(s) => { store = s }} />
+      </StoreProvider>
+    )
+    act(() => { store.setSpeakerVolume(0.8) })
+    expect(store.speakerVolume).toBe(0.8)
+  })
+
+  it('showAudioSettings defaults to false', () => {
+    let store: any
+    render(
+      <StoreProvider>
+        <TestConsumer onMount={(s) => { store = s }} />
+      </StoreProvider>
+    )
+    expect(store.showAudioSettings).toBe(false)
+  })
+
+  it('setShowAudioSettings toggles visibility', () => {
+    let store: any
+    render(
+      <StoreProvider>
+        <TestConsumer onMount={(s) => { store = s }} />
+      </StoreProvider>
+    )
+    act(() => { store.setShowAudioSettings(true) })
+    expect(store.showAudioSettings).toBe(true)
+    act(() => { store.setShowAudioSettings(false) })
+    expect(store.showAudioSettings).toBe(false)
+  })
 })

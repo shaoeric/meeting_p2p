@@ -5,6 +5,7 @@ import { voiceService } from '../services/voice'
 import { screenShareService } from '../services/screenShare'
 import AnnotationToolbar from './AnnotationToolbar'
 import AnnotationCanvas from './AnnotationCanvas'
+import AudioSettings from './AudioSettings'
 
 export default function MeetingRoom() {
   const store = useStore()
@@ -195,11 +196,11 @@ export default function MeetingRoom() {
 
       <div className="bottom-bar">
         <button
-          className={`control-btn ${store.isMuted ? 'active' : ''}`}
+          className={`control-btn mute-btn ${store.isMuted ? 'active' : ''}`}
           onClick={handleMute}
-          title={store.isMuted ? '取消静音' : '静音'}
+          title={store.isMuted ? '开麦' : '闭麦'}
         >
-          {store.isMuted ? '🔇 取消静音' : '🎤 静音'}
+          {store.isMuted ? '🔇' : '🎤'}
         </button>
 
         <button
@@ -208,6 +209,14 @@ export default function MeetingRoom() {
           title={store.isScreenSharing ? '停止共享' : '共享屏幕'}
         >
           {store.isScreenSharing ? '⏹ 停止共享' : '🖥️ 共享屏幕'}
+        </button>
+
+        <button
+          className="control-btn settings-btn"
+          onClick={() => store.setShowAudioSettings(true)}
+          title="音频设置"
+        >
+          ⚙️
         </button>
 
         {store.isHost ? (
@@ -220,6 +229,8 @@ export default function MeetingRoom() {
           </button>
         )}
       </div>
+
+      {store.showAudioSettings && <AudioSettings />}
 
       {store.error && (
         <div className="error-toast">

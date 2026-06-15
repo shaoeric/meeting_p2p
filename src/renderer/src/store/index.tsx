@@ -41,6 +41,8 @@ interface StoreState {
   fontSize: number
   error: string | null
   localStream: MediaStream | null
+  speakerVolume: number
+  showAudioSettings: boolean
 }
 
 interface StoreContextValue extends StoreState {
@@ -66,6 +68,8 @@ interface StoreContextValue extends StoreState {
   setFontSize: (size: number) => void
   setError: (error: string | null) => void
   setLocalStream: (stream: MediaStream | null) => void
+  setSpeakerVolume: (volume: number) => void
+  setShowAudioSettings: (show: boolean) => void
   reset: () => void
   getRefs: () => {
     isMutedRef: React.MutableRefObject<boolean>
@@ -94,7 +98,9 @@ const defaultState: StoreState = {
   lineWidth: 3,
   fontSize: 18,
   error: null,
-  localStream: null
+  localStream: null,
+  speakerVolume: 0.5,
+  showAudioSettings: false,
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null)
@@ -118,6 +124,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [fontSize, setFontSize] = useState(defaultState.fontSize)
   const [error, setError] = useState<string | null>(null)
   const [localStream, setLocalStream] = useState<MediaStream | null>(null)
+  const [speakerVolume, setSpeakerVolume] = useState(defaultState.speakerVolume)
+  const [showAudioSettings, setShowAudioSettings] = useState(defaultState.showAudioSettings)
 
   const isMutedRef = useRef(isMuted)
   isMutedRef.current = isMuted
@@ -172,6 +180,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setFontSize(defaultState.fontSize)
     setError(null)
     setLocalStream(null)
+    setSpeakerVolume(defaultState.speakerVolume)
+    setShowAudioSettings(defaultState.showAudioSettings)
   }, [])
 
   const getRefs = useCallback(() => ({
@@ -201,6 +211,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     fontSize, setFontSize,
     error, setError,
     localStream, setLocalStream,
+    speakerVolume, setSpeakerVolume,
+    showAudioSettings, setShowAudioSettings,
     reset,
     getRefs
   }
