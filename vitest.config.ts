@@ -9,7 +9,7 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
-      provider: 'v8',
+      provider: 'istanbul',
       reporter: ['text', 'html', 'lcov'],
       include: ['src/renderer/src/services/*.ts', 'src/renderer/src/store/*.tsx'],
       exclude: [
@@ -20,7 +20,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src/renderer/src')
+      '@': resolve(__dirname, 'src/renderer/src'),
+      'trystero/torrent': resolve(__dirname, 'src/renderer/src/__mocks__/trystero.ts'),
+      'trystero': resolve(__dirname, 'src/renderer/src/__mocks__/trystero.ts')
     }
   }
 })
