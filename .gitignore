@@ -3,6 +3,7 @@ out/
 release/
 dist/
 .test-data/
+coverage/
 *.log
 .DS_Store
 Thumbs.db
