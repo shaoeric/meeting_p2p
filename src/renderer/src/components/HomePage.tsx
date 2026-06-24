@@ -5,6 +5,7 @@ import { voiceService } from '../services/voice'
 import { screenShareService } from '../services/screenShare'
 import { annotationsService } from '../services/annotations'
 import { getSelfId } from '../services/p2p'
+import AudioSettings from './AudioSettings'
 
 export default function HomePage() {
   const store = useStore()
