@@ -110,9 +110,9 @@ export default function AudioSettings() {
 
           <div className="volume-control">
             <span className="volume-label">音量</span>
-            <button className="volume-btn" onClick={handleVolumeDown} disabled={false}>−</button>
+            <button className="volume-btn" onClick={handleVolumeDown}>-</button>
             <span className="volume-value">{Math.round(volume * 100)}%</span>
-            <button className="volume-btn" onClick={handleVolumeUp} disabled={false}>+</button>
+            <button className="volume-btn" onClick={handleVolumeUp}>+</button>
           </div>
         </div>
       </div>
